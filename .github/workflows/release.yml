@@ -71,6 +71,30 @@ jobs:
         with:
           subject-path: dist/enterprise_solutions-${{ github.ref_name }}.zip
 
+      - name: Prepare release attestation predicate
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+        run: |
+          set -euo pipefail
+
+          jq -n \
+            --arg purl "pkg:github/${REPOSITORY}@${RELEASE_TAG}" \
+            --arg packageId "${REPOSITORY_ID}" \
+            '{
+              purl: $purl,
+              packageId: $packageId
+            }' > dist/release-predicate.json
+
+      - name: Generate release attestation
+        uses: actions/attest@v4.2.2
+        with:
+          subject-path: dist/enterprise_solutions-${{ github.ref_name }}.zip
+          predicate-type: https://in-toto.io/attestation/release/v0.2
+          predicate-path: dist/release-predicate.json
+
       - name: Create draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
