@@ -57,8 +57,8 @@ jobs:
 
           for document in "${documents[@]}"; do
             solution="${document%%/*}"
-            mkdir -p "dist/release/${solution}"
-            cp "${document}" "dist/release/${solution}/"
+            echo "Packaging ${solution}"
+            cp -R "${solution}" dist/release/
           done
 
           (
@@ -71,7 +71,7 @@ jobs:
         with:
           subject-path: dist/enterprise_solutions-${{ github.ref_name }}.zip
 
-      - name: Publish GitHub Release
+      - name: Create draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -79,7 +79,26 @@ jobs:
           set -euo pipefail
 
           gh release create "${GITHUB_REF_NAME}" \
-            "dist/enterprise_solutions-${GITHUB_REF_NAME}.zip" \
+            --draft \
             --verify-tag \
             --title "Enterprise Solutions ${GITHUB_REF_NAME}" \
             --generate-notes
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gh release upload "${GITHUB_REF_NAME}" \
+            "dist/enterprise_solutions-${GITHUB_REF_NAME}.zip"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gh release edit "${GITHUB_REF_NAME}" --draft=false
