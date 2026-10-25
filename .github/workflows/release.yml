@@ -108,7 +108,7 @@ jobs:
             --title "Enterprise Solutions ${GITHUB_REF_NAME}" \
             --generate-notes
 
-      - name: Upload release asset
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -117,6 +117,16 @@ jobs:
 
           gh release upload "${GITHUB_REF_NAME}" \
             "dist/enterprise_solutions-${GITHUB_REF_NAME}.zip"
+
+          for document in dist/release/*/pomology.json; do
+            solution="${document%/pomology.json}"
+            solution="${solution##*/}"
+
+            asset="dist/${solution}-pomology.json"
+            cp "$document" "$asset"
+
+            gh release upload "${GITHUB_REF_NAME}" "$asset"
+          done
 
       - name: Publish GitHub Release
         env:
